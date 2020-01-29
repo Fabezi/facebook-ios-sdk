@@ -33,6 +33,7 @@ class LoginButtonViewController: LoginViewController {
         super.viewDidAppear(animated)
 
         verifyAppID()
+        verifyURLScheme()
     }
 
 }

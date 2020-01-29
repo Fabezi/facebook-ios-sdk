@@ -24,13 +24,36 @@ import UIKit
  */
 class LoginViewController: UIViewController {
 
+    private let bundle = Bundle.main
+    private typealias BundleURLTypes = [[String: [String]]]
+
+    enum PlistKeys {
+        static let appID = "FacebookAppID"
+        static let urlTypes = "CFBundleURLTypes"
+        static let urlSchemes = "CFBundleURLSchemes"
+    }
+
     func verifyAppID() {
-        guard let appID = Bundle.main.object(forInfoDictionaryKey: "FacebookAppID"),
-            appID as? String != "<enter your app ID here>"
+        guard let appID = bundle.object(forInfoDictionaryKey: PlistKeys.appID),
+            appID as? String != "{your-app-id}"
             else {
                 return presentAlert(
                     title: "Invalid App Identifier",
                     message: "Please enter your Facebook application identifier. This can be found on the developer portal at developers.facebook.com"
+                )
+        }
+    }
+
+    func verifyURLScheme() {
+        guard let urlTypes = bundle.object(forInfoDictionaryKey: PlistKeys.urlTypes) as? BundleURLTypes,
+            let urlType = urlTypes.first,
+            let urlSchemes = urlType[PlistKeys.urlSchemes],
+            let scheme = urlSchemes.first,
+            scheme != "fb{your-app-id}"
+            else {
+                return presentAlert(
+                    title: "Invalid URL Scheme",
+                    message: "Please update the url scheme in your info.plist with your Facebook application identifier to allow for the login flow to reopen this app"
                 )
         }
     }
@@ -44,7 +67,14 @@ class LoginViewController: UIViewController {
     }
 
     func presentAlert(for error: Error) {
-        presentAlert(title: "Login Error", message: error.localizedDescription)
+        let error = error as NSError
+
+        guard let sdkMessage = error.userInfo["com.facebook.sdk:FBSDKErrorDeveloperMessageKey"] as? String
+            else {
+                preconditionFailure("Errors from the SDK should have a developer facing message")
+        }
+
+        presentAlert(title: "Login Error", message: sdkMessage)
     }
 
     func showLoginDetails() {
